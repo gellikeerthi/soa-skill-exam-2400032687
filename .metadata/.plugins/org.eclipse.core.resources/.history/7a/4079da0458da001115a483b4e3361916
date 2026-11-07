@@ -1,0 +1,191 @@
+
+package com.klef.soa.test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+
+import com.klef.soa.entity.Interview;
+import com.klef.soa.repository.InterviewRepository;
+
+@DataJpaTest
+// Used for testing JPA repository operations
+
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+// Uses our actual PostgreSQL database instead of replacing it with H2
+
+public class InterviewRepositoryTest {
+
+    @Autowired
+    private InterviewRepository repository;
+
+    // TC-1: Test database connection
+    @Test
+    void testDatabaseConnection() {
+
+        long count = repository.count();
+
+        assertTrue(count >= 0);
+
+        System.out.println("Total Interviews in Database: " + count);
+    }
+
+    // TC-2: Test saving an interview
+    @Test
+    void testSaveInterview() {
+
+        Interview i = new Interview();
+
+        i.setName("Java Testing");
+        i.setType("Technical");
+        i.setStatus("Scheduled");
+        i.setLocation("Hyderabad");
+
+        Interview saved = repository.save(i);
+
+        assertNotNull(saved.getInterviewId());
+
+        System.out.println("Interview Saved Successfully");
+        System.out.println("Interview ID: " + saved.getInterviewId());
+        System.out.println("Name: " + saved.getName());
+    }
+
+    // TC-3: Test finding all interviews
+    @Test
+    void testFindAllInterviews() {
+
+        List<Interview> interviews = repository.findAll();
+
+        assertNotNull(interviews);
+
+        System.out.println("Total Interviews: " + interviews.size());
+
+        for (Interview i : interviews) {
+            System.out.println(i);
+        }
+    }
+
+    // TC-4: Test finding interview by ID
+    @Test
+    void testFindInterviewById() {
+
+        Interview i = new Interview();
+
+        i.setName("Spring Boot");
+        i.setType("Technical");
+        i.setStatus("Scheduled");
+        i.setLocation("Chennai");
+
+        Interview saved = repository.save(i);
+
+        Optional<Interview> interview =
+                repository.findById(saved.getInterviewId());
+
+        assertTrue(interview.isPresent());
+
+        assertEquals(saved.getInterviewId(),
+                     interview.get().getInterviewId());
+
+        System.out.println("Interview ID: "
+                + interview.get().getInterviewId());
+
+        System.out.println("Name: "
+                + interview.get().getName());
+    }
+
+    // TC-5: Test finding interview by name
+    @Test
+    void testFindInterviewByName() {
+
+        Interview i = new Interview();
+
+        i.setName("Java Developer");
+        i.setType("Technical");
+        i.setStatus("Scheduled");
+        i.setLocation("Bangalore");
+
+        repository.save(i);
+
+        List<Interview> interviews =
+                repository.findByName("Java Developer");
+
+        assertFalse(interviews.isEmpty());
+
+        assertEquals("Java Developer",
+                     interviews.get(0).getName());
+
+        System.out.println("Interview Name: "
+                + interviews.get(0).getName());
+    }
+
+    // TC-6: Test finding interview by type
+    @Test
+    void testFindInterviewByType() {
+
+        Interview i = new Interview();
+
+        i.setName("HR Round");
+        i.setType("HR");
+        i.setStatus("Scheduled");
+        i.setLocation("Hyderabad");
+
+        repository.save(i);
+
+        List<Interview> interviews =
+                repository.findByType("HR");
+
+        assertFalse(interviews.isEmpty());
+
+        assertEquals("HR", interviews.get(0).getType());
+
+        System.out.println("Interview Type: "
+                + interviews.get(0).getType());
+    }
+
+    // TC-7: Test finding interview with invalid ID
+    @Test
+    void testFindInterviewByInvalidId() {
+
+        Optional<Interview> interview =
+                repository.findById(-999L);
+
+        assertFalse(interview.isPresent());
+
+        System.out.println("Interview not found");
+    }
+
+    // TC-8: Test deleting an interview
+    @Test
+    void testDeleteInterview() {
+
+        Interview i = new Interview();
+
+        i.setName("Delete Testing");
+        i.setType("Technical");
+        i.setStatus("Scheduled");
+        i.setLocation("Delhi");
+
+        Interview saved = repository.save(i);
+
+        Long id = saved.getInterviewId();
+
+        repository.deleteById(id);
+
+        Optional<Interview> interview =
+                repository.findById(id);
+
+        assertFalse(interview.isPresent());
+
+        System.out.println("Interview Deleted Successfully");
+    }
+
+}

@@ -1,0 +1,210 @@
+
+package com.klef.soa.test;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.transaction.annotation.Transactional;
+
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+@Transactional
+public class InterviewIntegrationTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    // TC-1: Test adding an interview
+    @Test
+    void testAddInterview() throws Exception {
+
+        String json = """
+        {
+            "name": "Java Developer",
+            "type": "Technical",
+            "status": "Scheduled",
+            "location": "Hyderabad"
+        }
+        """;
+
+        mockMvc.perform(post("/interview/add")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(status().isCreated());
+
+        System.out.println("TC-1: Interview added successfully");
+    }
+
+    // TC-2: Test displaying all interviews
+    @Test
+    void testGetAllInterviews() throws Exception {
+
+        mockMvc.perform(get("/interview/displayall"))
+                .andExpect(status().isOk());
+
+        System.out.println("TC-2: Display all interviews successful");
+    }
+
+    // TC-3: Test finding interview by name
+    @Test
+    void testFindByName() throws Exception {
+
+        String json = """
+        {
+            "name": "Java Developer",
+            "type": "Technical",
+            "status": "Scheduled",
+            "location": "Hyderabad"
+        }
+        """;
+
+        mockMvc.perform(post("/interview/add")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/interview/name/{name}", "Java Developer"))
+                .andExpect(status().isOk());
+
+        System.out.println("TC-3: Find interview by name successful");
+    }
+
+    // TC-4: Test finding interview by type
+    @Test
+    void testFindByType() throws Exception {
+
+        String json = """
+        {
+            "name": "HR Round",
+            "type": "HR",
+            "status": "Scheduled",
+            "location": "Chennai"
+        }
+        """;
+
+        mockMvc.perform(post("/interview/add")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/interview/type/{type}", "HR"))
+                .andExpect(status().isOk());
+
+        System.out.println("TC-4: Find interview by type successful");
+    }
+
+    // TC-5: Test updating an interview
+    @Test
+    void testUpdateInterview() throws Exception {
+
+        String json = """
+        {
+            "name": "Java Developer",
+            "type": "Technical",
+            "status": "Scheduled",
+            "location": "Hyderabad"
+        }
+        """;
+
+        MvcResult result = mockMvc.perform(post("/interview/add")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        JsonNode node = objectMapper.readTree(
+                result.getResponse().getContentAsString());
+
+        Long id = node.get("interviewId").asLong();
+
+        String updateJson = """
+        {
+            "name": "Java Developer Updated",
+            "type": "Technical",
+            "status": "Completed",
+            "location": "Bangalore"
+        }
+        """;
+
+        mockMvc.perform(put("/interview/update/" + id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updateJson))
+                .andExpect(status().isOk());
+
+        System.out.println("TC-5: Interview updated successfully");
+    }
+
+    // TC-6: Test updating an invalid interview ID
+    @Test
+    void testUpdateInvalidInterview() throws Exception {
+
+        String json = """
+        {
+            "name": "Invalid Interview",
+            "type": "Technical",
+            "status": "Scheduled",
+            "location": "Delhi"
+        }
+        """;
+
+        mockMvc.perform(put("/interview/update/999999")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(status().isNotFound());
+
+        System.out.println("TC-6: Invalid interview update handled");
+    }
+
+    // TC-7: Test deleting an interview
+    @Test
+    void testDeleteInterview() throws Exception {
+
+        String json = """
+        {
+            "name": "Delete Testing",
+            "type": "Technical",
+            "status": "Scheduled",
+            "location": "Delhi"
+        }
+        """;
+
+        MvcResult result = mockMvc.perform(post("/interview/add")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        JsonNode node = objectMapper.readTree(
+                result.getResponse().getContentAsString());
+
+        Long id = node.get("interviewId").asLong();
+
+        mockMvc.perform(delete("/interview/delete/" + id))
+                .andExpect(status().isOk());
+
+        System.out.println("TC-7: Interview deleted successfully");
+    }
+
+    // TC-8: Test deleting an invalid interview ID
+    @Test
+    void testDeleteInvalidInterview() throws Exception {
+
+        mockMvc.perform(delete("/interview/delete/999999"))
+                .andExpect(status().isNotFound());
+
+        System.out.println("TC-8: Invalid interview deletion handled");
+    }
+}
